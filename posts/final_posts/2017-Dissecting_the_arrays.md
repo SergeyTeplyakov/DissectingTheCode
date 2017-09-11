@@ -17,7 +17,7 @@ C# has arrays from the very beginning and back in the day that was the only "gen
 * Managed object internals, Part 3. The layout of a managed array
 
 ## Array covariance, and a bit of history
-One of the strangest feature in the C# language is an array covariance: an ability to assign an array of type `T` to array of type `object` or any other base type of `T`.
+One of the strangest features in the C# language is an array covariance: an ability to assign an array of type `T` to array of type `object` or any other base type of `T`.
 
 ```csharp
 string[] strings = new [] {"1", "2"};
@@ -34,23 +34,23 @@ There is a well-known joke in the .NET community about that feature: C# authors 
 
 But I don't think this is the reason.
 
-Back in the late 90-s, the CLR doesn't have generics. Right? And how in this case language users can write reusable code that deals with array of arbitrary data types? For instance, how to write a function that dumps the data to the console?
+Back in the late 90-s, the CLR doesn't have generics. Right? And how in this case language users can write reusable code that deals with an array of arbitrary data types? For instance, how to write a function that dumps the data to the console?
 
-One way to do that is to define a function that takes `object[]` and force every caller to convert their array manually by copying it into the array of objects. This will work, but would be highly inefficient. Another solution is to allow conversion from any arrays of reference types to `object[]`, i.e. preserve IS-A relationship for `Derived[]` to `Base[]` where `Derived` inherits from the `Base`.
+One way to do that is to define a function that takes `object[]` and force every caller to convert their array manually by copying it into the array of objects. This will work but would be highly inefficient. Another solution is to allow conversion from any arrays of reference types to `object[]`, i.e. preserve IS-A relationship for `Derived[]` to `Base[]` where `Derived` inherits from the `Base`.
 
 Lack of generics in the first CLR version forced designers to weaken the type system. But that decision (I assume) was deliberate, not just a copy cat from the Java ecosystem.
 
 ## The internal structure and implementation details
 
-Array covariance opens a hole in the type system at compile time, but it doesn't mean that a type error will crash the application (similar "error" in C++ will lead to an undefined behavior). The CLR will ensure that the type safety holds, but the check will happen at runtime. To do that the CLR should store the type of an element of an array element and make a check when a user tries to change an array instance. Luckily this check is only needed for arrays of reference types because structs are 'sealed' and does not support inheritance.
+Array covariance opens a hole in the type system at compile time, but it doesn't mean that a type error will crash the application (similar "error" in C++ will lead to an undefined behavior). The CLR will ensure that the type safety holds, but the check will happen at runtime. To do that the CLR should store the type of an element of an array element and make a check when a user tries to change an array instance. Luckily this check is only needed for arrays of reference types because structs are 'sealed' and do not support inheritance.
 
-Even though there is an implicit conversion between different value types (like from `int` to `byte`), there is **no** implicit or explicit conversions between `int[]` and `byte[]`. Array covariance conversion is **reference conversion** that doesn't change the layout of the converted objects and keeps referential identity of the object being converted.
+Even though there is an implicit conversion between different value types (like from `int` to `byte`), there are **no** implicit or explicit conversions between `int[]` and `byte[]`. Array covariance conversion is **reference conversion** that doesn't change the layout of the converted objects and keeps the referential identity of the object being converted.
 
-In the older version of the CLR, arrays of reference and value types had different layouts. Array of reference type had a reference to a type handle of an element in each instance:
+In the older version of the CLR, arrays of reference and value types had different layouts. An array of reference type had a reference to a type handle of an element in each instance:
 
 (https://github.com/SergeyTeplyakov/DissectingTheCode/blob/master/posts/Images/Arrays_Figure_1.png "Old array layout")
 
-This has been changed in recent version of the CLR and now the element type is stored in the method table:
+This has been changed in a recent version of the CLR and now the element type is stored in the method table:
 
 (https://github.com/SergeyTeplyakov/DissectingTheCode/blob/master/posts/Images/Arrays_Figure_2.png "New array layout")
 
@@ -90,7 +90,7 @@ union
 };
 ```
 
-I'm not sure when the layout of the array was changed (*) but it seems there was a trade off between speed and managed memory. Initial implementation (when the type handle was stored in every array instance) should've been faster due to memory locality, but definitely had non-negligible memory overhead. Back than all arrays of reference types had shared method tables. But right now this is no longer the case: each array of reference type has its own method table that [points to the same EEClass](https://github.com/dotnet/coreclr/blob/7590378d8a00d7c29ade23fada2ce79f4495b889/src/vm/array.cpp#L272) that points to an element type handle.
+I'm not sure when the layout of the array was changed (*) but it seems there was a trade off between speed and managed memory. Initial implementation (when the type handle was stored in every array instance) should've been faster due to memory locality, but definitely had a non-negligible memory overhead. Back then all arrays of reference types had shared method tables. But right now this is no longer the case: each array of reference type has its own method table that [points to the same EEClass](https://github.com/dotnet/coreclr/blob/7590378d8a00d7c29ade23fada2ce79f4495b889/src/vm/array.cpp#L272) that points to an element type handle.
 
 (*) Maybe someone from the CLR team can shed some lights on that.
 
@@ -209,11 +209,11 @@ The results are:
  WithoutCheck | 442.7 us |  9.371 us |  8.765 us |
 ```
 
-Don't be confused with "almost 2x" performance difference. Even for the worst case, it takes less then a millisecond to assign 100K elements. The performance is extremely good. But the difference could be noticeable in the real world.
+Don't be confused with "almost 2x" performance difference. Even for the worst case, it takes less than a millisecond to assign 100K elements. The performance is extremely good. But the difference could be noticeable in the real world.
 
-Many performance critical .NET applications are using object pools. The pool allows to reuse a managed instance without creating a new one each time. This approach reduces the memory pressure and could have a very reasonable impact on the application performance.
+Many performance critical .NET applications are using object pools. The pool allows reusing a managed instance without creating a new one each time. This approach reduces the memory pressure and could have a very reasonable impact on the application performance.
 
-Object pool can be implemented based on a concurrent data structure like [`ConcurrentQueue`](http://referencesource.microsoft.com/#mscorlib/system/Collections/Concurrent/ConcurrentQueue.cs,18bcbcbdddbcfdcb) or based on a simple array. Here is an snippet from the [object pool implementation](http://source.roslyn.io/#Microsoft.CodeAnalysis/ObjectPool%25601.cs,40) in the Roslyn codebase:
+Object pool can be implemented based on a concurrent data structure like [`ConcurrentQueue`](http://referencesource.microsoft.com/#mscorlib/system/Collections/Concurrent/ConcurrentQueue.cs,18bcbcbdddbcfdcb) or based on a simple array. Here is a snippet from the [object pool implementation](http://source.roslyn.io/#Microsoft.CodeAnalysis/ObjectPool%25601.cs,40) in the Roslyn codebase:
 
 ```csharp
 internal class ObjectPool<T> where T : class
@@ -233,4 +233,4 @@ internal class ObjectPool<T> where T : class
 
 The implementation manages an array of cached items but instead of using `T[]` the pool wraps the `T` into the struct `Element` to avoid the check at the runtime.
 
-Some time ago I've fixed an object pool in our application to get 30% performance improvement for the parsing phase. This was not due to the trick that I'm describing here, and was related to concurrent access of the pool. But the point is that object pools could be on the hot path of the application and even small performance improvements like one mentioned above could have a reasonable impact on the end to end performance.
+Some time ago I've fixed an object pool in our application to get 30% performance improvement for the parsing phase. This was not due to the trick that I'm describing here and was related to concurrent access of the pool. But the point is that object pools could be on the hot path of the application and even small performance improvements like one mentioned above could have a reasonable impact on the end to end performance.
