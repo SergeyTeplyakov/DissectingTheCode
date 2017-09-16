@@ -8,57 +8,57 @@ using System.Threading.Tasks;
 
 namespace LockingCost.NodeWithLockAndHashCode
 {
-    public class Node
+public class Node
+{
+    public const int InvalidId = -1;
+    private static int s_idCounter;
+    private object syncRoot = new object();
+    private int m_id = InvalidId;
+    public Node()
     {
-        public const int InvalidId = -1;
-        private static int s_idCounter;
-        private object syncRoot = new object();
-        private int m_id = InvalidId;
-        public Node()
-        {
-            GetHashCode();
-        }
+        GetHashCode();
+    }
 
-        public int Id
+    public int Id
+    {
+        get
         {
-            get
+            if (m_id == InvalidId)
             {
-                if (m_id == InvalidId)
+                lock(this)
                 {
-                    lock(this)
+                    if (m_id == InvalidId)
                     {
-                        if (m_id == InvalidId)
-                        {
-                            m_id = Interlocked.Increment(ref s_idCounter);
-                        }
+                        m_id = Interlocked.Increment(ref s_idCounter);
                     }
                 }
-
-                return m_id;
             }
-        }
 
-        static Process currentProcess = System.Diagnostics.Process.GetCurrentProcess();
-
-        public static void Measure(int numberOfNodes, bool isWarmUp)
-        {
-            var nodes = Enumerable.Range(1, numberOfNodes).Select(n => new Node()).ToList();
-            if (!isWarmUp)
-            {
-                Console.WriteLine("Press any key to get Id's");
-                Console.ReadLine();
-            }
-            var mem1 = Process.GetCurrentProcess().WorkingSet64;
-            var sw = Stopwatch.StartNew();
-            long count = nodes
-            .AsParallel()
-            .WithDegreeOfParallelism(16)
-            .Select(n => (long)n.Id).Sum();
-            var mem2 = Process.GetCurrentProcess().WorkingSet64;
-            if (!isWarmUp)
-            {
-                System.Console.WriteLine($"With lock: {count}, at {sw.ElapsedMilliseconds}ms, allocs: {mem2 - mem1}");
-            }
+            return m_id;
         }
     }
 }
+}
+
+//static Process currentProcess = System.Diagnostics.Process.GetCurrentProcess();
+
+//public static void Measure(int numberOfNodes, bool isWarmUp)
+//{
+//    var nodes = Enumerable.Range(1, numberOfNodes).Select(n => new Node()).ToList();
+//    if (!isWarmUp)
+//    {
+//        Console.WriteLine("Press any key to get Id's");
+//        Console.ReadLine();
+//    }
+//    var mem1 = Process.GetCurrentProcess().WorkingSet64;
+//    var sw = Stopwatch.StartNew();
+//    long count = nodes
+//    .AsParallel()
+//    .WithDegreeOfParallelism(16)
+//    .Select(n => (long)n.Id).Sum();
+//    var mem2 = Process.GetCurrentProcess().WorkingSet64;
+//    if (!isWarmUp)
+//    {
+//        System.Console.WriteLine($"With lock: {count}, at {sw.ElapsedMilliseconds}ms, allocs: {mem2 - mem1}");
+//    }
+//}

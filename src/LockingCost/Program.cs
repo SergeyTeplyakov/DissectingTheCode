@@ -102,29 +102,32 @@ namespace LockingCost
             //m_nodeWithLocksAndGetHashCode = Enumerable.Range(1, Count).Select(n => new NodeWithLockAndHashCode.Node()).ToList();
         }
 
-        List<NodeWithLock.Node> m_nodeWithLocks => Enumerable.Range(1, Count).Select(n => new NodeWithLock.Node()).ToList();
+List<NodeWithLock.Node> m_nodeWithLocks => 
+    Enumerable.Range(1, Count).Select(n => new NodeWithLock.Node()).ToList();
+List<NodeNoLock.NoLockNode> m_nodeWithNoLocks => 
+    Enumerable.Range(1, Count).Select(n => new NodeNoLock.NoLockNode()).ToList();
 
-        [Benchmark]
-        public long NodeWithLock()
-        {
-            // m_nodeWithLocks has 5 million instances
-            return m_nodeWithLocks
-                .AsParallel()
-                .WithDegreeOfParallelism(16)
-                .Select(n => (long)n.Id).Sum();
-        }
+[Benchmark]
+public long NodeWithLock()
+{
+    // m_nodeWithLocks has 5 million instances
+    return m_nodeWithLocks
+        .AsParallel()
+        .WithDegreeOfParallelism(16)
+        .Select(n => (long)n.Id).Sum();
+}
 
-        [Benchmark]
-        public long NodeWithNoLock()
-        {
-            // m_nodeWithNoLocks has 5 million instances
-            return m_nodeWithNoLocks
-                .AsParallel()
-                .WithDegreeOfParallelism(16)
-                .Select(n => (long)n.Id).Sum();
-        }
+[Benchmark]
+public long NodeWithNoLock()
+{
+    // m_nodeWithNoLocks has 5 million instances
+    return m_nodeWithNoLocks
+        .AsParallel()
+        .WithDegreeOfParallelism(16)
+        .Select(n => (long)n.Id).Sum();
+}
 
-        List<NodeNoLock.NoLockNode> m_nodeWithNoLocks => Enumerable.Range(1, Count).Select(n => new NodeNoLock.NoLockNode()).ToList();
+        
         List<NodeWithLockAndHashCode.Node> m_nodeWithLocksAndGetHashCode => Enumerable.Range(1, Count).Select(n => new NodeWithLockAndHashCode.Node()).ToList();
 
         [Benchmark]
@@ -158,11 +161,26 @@ namespace LockingCost
             // Just need to call GetHashCode and discard the result
             //o.GetHashCode();
 
+object o = new object();
+lock (o)
+{
+    Task.Run(() =>
+    {
+        // This will promote a thin lock as well
+        lock (o) { }
+    });
+
+    // 10 ms is not enough, the CLR spins longer than 10 ms.
+    Thread.Sleep(100);
+    Debugger.Break();
+}
+
+
 
             string[] s = {""};
-            Array a = s;
-            // System.InvalidCastException: Object cannot be stored in an array of this type.
-            a.SetValue("1", 0);
+Array a = s;
+// System.InvalidCastException: Object cannot be stored in an array of this type.
+a.SetValue("1", 0);
             object[] o = s;
             // System.ArrayTypeMismatchException: Attempted to access an element as a type incompatible with the array.
             o[0] = new object();

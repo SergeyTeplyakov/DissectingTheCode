@@ -31,6 +31,10 @@ namespace MessingUpWithArrays
 
         static void Main(string[] args)
         {
+string[] strings = new[] { "1", "2" };
+object[] objects = strings;
+
+objects[0] = 42; //runtime error
             //var ip = new IpAddress(255, 255, 255, 0);
 
             //// FFFFFF00
