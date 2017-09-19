@@ -6,23 +6,23 @@ In the recent blog posts we've discussed invisible part of an object instance la
 * [Managed object internals, Part 2. Object header layout and the cost of locking](https://blogs.msdn.microsoft.com/seteplia/2017/09/06/managed-object-internals-part-2-object-header-layout-and-the-cost-of-locking/)
 * [Managed object internals, Part 3. The layout of a managed array](https://blogs.msdn.microsoft.com/seteplia/2017/09/12/managed-object-internals-part-3-the-layout-of-a-managed-array-3/)
 
-This time we're going to focus on the layout of an instance itself, specifically, how instance fields are layed out in memory. 
+This time we're going to focus on the layout of an instance itself, specifically, how instance fields are laid out in memory. 
 
 Gif with animation 
 
-In this blog post we're going to write the tool that you saw in the previous figure and then will explore the layout of value types and reference types. If you're not interested in the implementation details of the tool feel free to jump to a section 'Inspecting a value type layout at runtime'.
-TODO: add a link to a section.
-
-There is no official documentation about fields layout because the CLR authors reserve the right to change it in the future for performance or other reasons. But knowledge about the layout can be helpful if you're curious enough or if you're working on performance critical application. 
+There is no official documentation about instance fields layout because the CLR authors reserve the right to change it in the future for performance or other reasons. But knowledge about the layout can be helpful if you're curious or if you're working on performance critical application. 
 
 Let's suppose we're a bit of a both and we would like to inspect an object layout at a runtime. How can we do that? We can inspect a raw memory in Visual Studio or use !dumpobj command in [SOS Debugging Extension](https://docs.microsoft.com/en-us/dotnet/framework/tools/sos-dll-sos-debugging-extension). These approaches are tedious and boring, so we'll try to write a tool (at least a set of helper functions) that will print an object layout at runtime.
 
+If you're not interested in the implementation details of the tool feel free to jump to a section 'Inspecting a value type layout at runtime'.
+TODO: add a link to a section.
+
 ## Getting the field offset at runtime
-We definitely don't want to go to a dark side and do some hackery in unmanaged code. Instead we can use power of [LdFlda](https://msdn.microsoft.com/en-us/library/system.reflection.emit.opcodes.ldflda(v=vs.110).aspx) instruction. This IL instruction returns an address of a field for a given type. Unfortunately, this instruction is not exposed in C# language, so we have to do some light-weight code generation on the fly.
+We definitely don't want to go to a dark side and do some hackery in unmanaged code. Instead we can use power of [LdFlda](https://msdn.microsoft.com/en-us/library/system.reflection.emit.opcodes.ldflda(v=vs.110).aspx) instruction. This IL instruction returns an address of a field for a given type. Unfortunately, this instruction is not exposed in C# language, so we have to do some light-weight code generation on the fly to workaround that limitation.
 
-In [Dissecting the new() constraint in C#](https://blogs.msdn.microsoft.com/seteplia/2017/02/01/dissecting-the-new-constraint-in-c-a-perfect-example-of-a-leaky-abstraction/) we already did something similar. The idea is to generate [Dynamic Method](https://docs.microsoft.com/en-us/dotnet/framework/reflection-and-codedom/how-to-define-and-execute-dynamic-methods) with a given instructions.
+In [Dissecting the new() constraint in C#](https://blogs.msdn.microsoft.com/seteplia/2017/02/01/dissecting-the-new-constraint-in-c-a-perfect-example-of-a-leaky-abstraction/) we already did something similar. The idea is to generate [Dynamic Method](https://docs.microsoft.com/en-us/dotnet/framework/reflection-and-codedom/how-to-define-and-execute-dynamic-methods) with a given IL instructions.
 
-The method that we're going to generate looks should do the following:
+The method that we're going to generate should do the following:
 
 * Create an array that will hold all field addresses.
 * Enumerate over each `FieldInfo` of an object to get the offset by calling `LdFlda` instruction.
@@ -78,7 +78,7 @@ private static Func<object, long[]> GenerateFieldOffsetInspectionFunction(FieldI
 }
 ```
 
-No we can create a helper function that will provide the offsets for each field of a given type:
+Now we can create a helper function that will provide the offsets for each field of a given type:
 
 ```csharp
 public static (FieldInfo fieldInfo, int offset)[] GetFieldOffsets(Type t)
@@ -105,7 +105,7 @@ public static (FieldInfo fieldInfo, int offset)[] GetFieldOffsets(Type t)
 }
 ```
 
-The function is pretty straightforward but there is one caveat: `LdFlda` instruction expects an object instance on the evaluation stack. For value types and for reference types with a default construction, the solution is trivial: use `Activator.CreateInstance(Type)`. But what if we would like to inspect classes without a default constructor?
+The function is pretty straightforward but there is one caveat: `LdFlda` instruction expects an object instance on the evaluation stack. For value types and for reference types with a default constructor, the solution is trivial: use `Activator.CreateInstance(Type)`. But what if we would like to inspect classes without a default constructor?
 
 In this case we can use lesser known "generic factory" called [`FormatterServices.GetUninitializedObject(Type)`](https://msdn.microsoft.com/en-us/library/system.runtime.serialization.formatterservices.getuninitializedobject(v=vs.110).aspx):
 
@@ -116,7 +116,7 @@ private static object CreateInstance(Type t)
 }
 ```
 
-Now we can test `GetFieldOffsets` to get the layout of a given type:
+Let's test `GetFieldOffsets` and get the layout for the following type:
 
 ```csharp
 class ByteAndInt
@@ -139,11 +139,11 @@ Field n: starts at offset 0
 Field b: starts at offset 4
 ```
 
-Interesting, but not sufficient. We can inspect offsets for each field, but it would be very helpful to know the size of each field to understand how efficient the layout is and how exactly fields are layed out in memory.
+Interesting, but not sufficient. We can inspect offsets for each field, but it would be very helpful to know the size of each field to understand how efficient the layout is and how exactly fields are laid out in memory.
 
 ## Computing the size for a type instance
 
-There is no "official" way to get the size of the object instance. [`sizeof`](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/sizeof) operator works only for primitive types and user-defined structs with no fields of reference types. [`Marshal.SizeOf`](https://docs.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.marshal.sizeof?view=netframework-4.7) returns a size of an object in unmanaged memory and is not suitable for our needs as well. So, we need to do something by our our own.
+And again, there is no "official" way to get the size of the object instance. [`sizeof`](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/sizeof) operator works only for primitive types and user-defined structs with no fields of reference types. [`Marshal.SizeOf`](https://docs.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.marshal.sizeof?view=netframework-4.7) returns a size of an object in unmanaged memory and is not suitable for our needs as well. So, we need to do something by our own.
 
 We'll compute instance size for structs and object separately. Let's consider value types first. The layout of value types (as well as reference types, actually) can be controlled via [`StructLayoutAttribute`](https://msdn.microsoft.com/en-us/library/system.runtime.interopservices.structlayoutattribute(v=vs.110).aspx). The user may control the layout manually and can even define the size of the struct manually:
 
@@ -152,7 +152,7 @@ We'll compute instance size for structs and object separately. Let's consider va
 struct MyStruct {}
 ```
 
-To check the size correctly we're going to rely on the CLR itself. We'll generate another struct at runtime with sequential layout and we'll add two fields of the same type and will get the offset of the second field:
+To check the size correctly we're going to rely on the CLR itself. We'll generate another struct at runtime with the sequential layout and we'll add two fields of the same type and get the offset of the second field:
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
@@ -163,7 +163,7 @@ struct GeneratedStruct
 }
 ```
 
-In this case the offset of the second field will give us the size of a struct.
+In this case, the offset of the second field will give us the size of a struct.
 
 ```csharp
 public static int GetSizeOfValueType(Type type)
@@ -198,7 +198,7 @@ private static Type GenerateStructWithTwoFields(Type fieldType)
 }
 ```
 
-To get the size of a reference type instance will use another trick: we'll get the max field offset, add a size of that field and round that number to a pointer-size boundary. We already know how to compute the size of a value type and we know that every field of a reference type is just a pointer size. So we've got everything we need:
+To get the size of a reference type instance will use another trick: we'll get the max field offset, will add a size of that field and round that number to a pointer-size boundary. We already know how to compute the size of a value type and we know that every field of a reference type is just a pointer size. So we've got everything we need:
 
 ```csharp
 public static int GetSizeOfReferenceTypeInstance(Type type)
@@ -230,7 +230,7 @@ public static int GetFieldSize(Type t)
 }
 ```
 
-No we have enough information to get a proper layout information for any type instance at runtime.
+We have enough information to get a proper layout information for any type instance at runtime.
 
 ## Inspecting a value type layout at runtime
 
@@ -267,11 +267,11 @@ Size: 12. Paddings: 4 (%33 of empty space)
 |================================|
 ```
 
-By default a user-defined struct has 'sequential' layout with `Pack` equal to `0` that effectively equals to a `IntPtr.Size`. Here is a rule that [the CLR follows](https://msdn.microsoft.com/en-us/library/system.runtime.interopservices.structlayoutattribute.pack(v=vs.110).aspx):
+By default, a user-defined struct has th 'sequential' layout with `Pack` equal to `0` that effectively equals to an `IntPtr.Size`. Here is a rule that [the CLR follows](https://msdn.microsoft.com/en-us/library/system.runtime.interopservices.structlayoutattribute.pack(v=vs.110).aspx):
 
 *Each field must align with fields of its own size (1, 2, 4, 8, etc., bytes) or the alignment of the type, whichever is smaller. Because the default alignment of the type is the size of its largest element, which is greater than or equal to all other field lengths, this usually means that fields are aligned by their size. For example, even if the largest field in a type is a 64-bit (8-byte) integer or the Pack field is set to 8, Byte fields align on 1-byte boundaries, Int16 fields align on 2-byte boundaries, and Int32 fields align on 4-byte boundaries.*
 
-In this case the alignment is equal to `4` that led to a reasonable overhead. We can change the `Pack` to 1, but we can get a performance degradation due to unaligned memory operations or we can use [`LayoutKind.Auto`](https://msdn.microsoft.com/en-us/library/system.runtime.interopservices.layoutkind(v=vs.110).aspx) to allow the CLR to figure out the best layout:
+In this case, the alignment is equal to `4` that led to a reasonable overhead. We can change the `Pack` to 1, but we can get a performance degradation due to unaligned memory operations or we can use [`LayoutKind.Auto`](https://msdn.microsoft.com/en-us/library/system.runtime.interopservices.layoutkind(v=vs.110).aspx) to allow the CLR to figure out the best layout:
 
 ```csharp
 [StructLayout(LayoutKind.Auto)]
@@ -304,10 +304,10 @@ Size: 8. Paddings: 0 (%0 of empty space)
 
 ## Inspecting a reference type layout at runtime
 
-There are two main differences between layout of a reference type and a value type. First, each "object" instance has a header and a method table pointer. And second, by default the layout for "object" is automatic, not sequential. And similar to value types, sequential layout is possible only when a class doesn't have any fields of reference types.
+There are two main differences between the layout of a reference type and a value type. First, each "object" instance has a header and a method table pointer. And second, by default, the layout for "object" is automatic, not sequential. And similar to value types, the sequential layout is possible only when a class doesn't have any fields of reference types.
 
 // TODO: link to a github as well.
-Method `TypeLayout.PrintLayout<T>(bool recursively = true)` takes an argument that allows to print a nested types as well. 
+Method `TypeLayout.PrintLayout<T>(bool recursively = true)` takes an argument that allows printing nested types as well. 
 
 ```csharp
 public class ClassWithNestedCustomStruct
@@ -353,7 +353,7 @@ Size: 40. Paddings: 11 (%27 of empty space)
 
 Even though the layouts of reference and value types are pretty simple, I've found one interesting moment.
 
-I've been investigating a memory issue in my project and I've noticed some strange thing: the sum of all fields of a managed object was higher than the instance size. I roughly knew the rules how the CLR layed out fields so I was puzzled. I've started working on this tool to understand that issue.
+I've been investigating a memory issue in my project and I've noticed some strange thing: the sum of all fields of a managed object was higher than the instance size. I roughly knew the rules how the CLR laid out fields so I was puzzled. I've started working on this tool to understand that issue.
 
 I've narrowed down the issue to the following case:
 
@@ -394,7 +394,7 @@ Size: 40. Paddings: 21 (%52 of empty space)
 
 It seems that using wrapping a struct is not free. **If the type layout is `LayoutKind.Auto`** the CLR will align each field of a **custom value type** on a pointer size boundaries! This means that if you have multiple structs that wraps just a single `int` or `byte` and they're widely used in millions of objects, you could have a noticeable memory overhead!
 
-To mitigate the issue you may consider using `LayoutKind.Sequential` on your class, unwrap the wrapper or use a struct that has a sequential layout by default.
+This is a hard to fix the issue because almost every class has fields of a reference type that will enforce automatic layout. If you have a widely used class that has this issue, you may consider unwrapping the struct or refactor you class to allow sequential layout.
 
 ## References
 
