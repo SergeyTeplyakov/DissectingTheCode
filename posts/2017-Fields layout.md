@@ -10,7 +10,6 @@ This time we're going to focus on the layout of an instance itself, specifically
 
 +(https://github.com/SergeyTeplyakov/DissectingTheCode/blob/master/posts/Images/FieldsLayout_Figure1.gif "Demo")
 
-
 There is no official documentation about instance fields layout because the CLR authors reserved the right to change it in the future for performance or other reasons. But knowledge about the layout can be helpful if you're curious or if you're working on performance critical application. 
 
 Let's suppose we're a bit of a both and we would like to inspect an object layout at a runtime. How can we do that? We can inspect a raw memory in Visual Studio or use !dumpobj command in [SOS Debugging Extension](https://docs.microsoft.com/en-us/dotnet/framework/tools/sos-dll-sos-debugging-extension). These approaches are tedious and boring, so we'll try to write a tool (at least a set of helper functions) that will print an object layout at runtime.
