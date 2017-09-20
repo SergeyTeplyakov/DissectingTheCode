@@ -8,7 +8,8 @@ In the recent blog posts we've discussed invisible part of an object instance la
 
 This time we're going to focus on the layout of an instance itself, specifically, how instance fields are laid out in memory. 
 
-Gif with animation 
++(https://github.com/SergeyTeplyakov/DissectingTheCode/blob/master/posts/Images/FieldsLayout_Figure1.gif "Demo")
+
 
 There is no official documentation about instance fields layout because the CLR authors reserved the right to change it in the future for performance or other reasons. But knowledge about the layout can be helpful if you're curious or if you're working on performance critical application. 
 
