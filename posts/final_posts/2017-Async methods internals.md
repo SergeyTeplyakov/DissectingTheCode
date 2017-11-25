@@ -293,7 +293,7 @@ The async state machine represents just one piece of the puzzle. To understand t
 
 ### How different pieces are glued together?
 
-IMAGE
+(https://github.com/SergeyTeplyakov/DissectingTheCode/blob/master/posts/Images/Async_sequence_state_machine.png "Async workflow")
 
 The chart looks overly complicated but each piece is well-design and plays an important role. The most interesting collaboration is happening when an awaited task is not finished (marked with the brown rectangle in the diagram):
 
