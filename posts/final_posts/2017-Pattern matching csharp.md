@@ -1,8 +1,8 @@
 # Dissecting the pattern matching in C# 7
 
-C# 7 finally got a long-awaited feature called "pattern matching". If you're familiar with functional languages like F# you may be slightly disappointed with this feature in its current state, but even today it can simplify your code in a variety of different scenarios.
+C# 7 finally introduced a long-awaited feature called "pattern matching". If you're familiar with functional languages like F# you may be slightly disappointed with this feature in its current state, but even today it can simplify your code in a variety of different scenarios.
 
-Every new feature is fraught with danger for a developer working on a performance critical application. New levels of abstractions are good but in order to use them effectively, you should know what is happening under the hood. Today we're going to explore the pattern matching and will look under the covers to understand how they're implemented.
+Every new feature is fraught with danger for a developer working on a performance critical application. New levels of abstractions are good but in order to use them effectively, you should know what is happening under the hood. Today we're going to explore pattern matching and look under the covers to understand how it is implemented.
 
 The C# language introduced the notion of a pattern that can be used in `is`-expression and inside a `case` block of a `switch` statement.
 
@@ -12,8 +12,6 @@ There are 3 types of patterns:
 * The `var` pattern
 
 ## Pattern matching in `is`-expressions
-
-Here is an example of a different kind of patterns used with `is`-expressions:
 
 ```csharp
 public void IsExpressions(object o)
@@ -37,12 +35,12 @@ public void IsExpressions(object o)
 }
 ```
 
-`is`-expression can check if the value is equal to a constant and in a type check can optionally specify the **pattern variable**. 
+`is`-expression can check if the value is equal to a constant and a type check can optionally specify the **pattern variable**. 
 
 I've found few interesting aspects related to pattern matching in `is`-expressions:
 
-* Variable introduced in the `if` statement is lifted to the outer scope.
-* Variable introduced in the `if` statement is definitely assigned only when the pattern is matched.
+* Variable introduced in an `if` statement is lifted to the outer scope.
+* Variable introduced in an `if` statement is definitely assigned only when the pattern is matched.
 * Current implementation of the const pattern matching in `is`-expressions is not very efficient.
 
 Let's check the first two cases first:
@@ -89,9 +87,9 @@ public void BoxTwice(int n)
 }
 ```
 
-This code causes 2 boxing allocations that can reasonable affect performance if used on the critical path. It used to be the case that `o is null` was causing the boxing allocation if `o` is a nullable value type (see [Suboptimal code for e is null](https://github.com/dotnet/roslyn/issues/13247)) so I really hope that this behavior will be fixed (here is [an issue on github](https://github.com/dotnet/roslyn/issues/20642)).
+This code causes 2 boxing allocations that can reasonable affect performance if used in the application's critical path. It used to be the case that `o is null` was causing the boxing allocation if `o` is a nullable value type (see [Suboptimal code for e is null](https://github.com/dotnet/roslyn/issues/13247)) so I really hope that this behavior will be fixed (here is [an issue on github](https://github.com/dotnet/roslyn/issues/20642)).
 
-Similarly, if the `n` is of type `object` the `o is 42` will cause one boxing allocation (for the literal `42`), even though the similar switch-based code would not cause any allocations.
+If the `n` variable is of type `object` the `o is 42` will cause one boxing allocation (for the literal `42`), even though the similar switch-based code would not cause any allocations.
 
 ## The `var` patterns in `is`-expressions
 
@@ -104,7 +102,9 @@ public void IsVar(object o)
 }
 ```
 
-`o is object` is `true` when `o` is not `null`, but `o is var x` is always `true`. The compiler knows about that and in the Release mode, it removes the if-clause altogether and just leaves the `Console` method call. Unfortunately, the compiler does not warn you that the code is unreachable if you would have an else block or will invert the check: `if (!(o is var x)) Console.WriteLine("Unreachable")`. Hopefully, this will be fixed as well.
+`o is object` is `true` when `o` is not `null`, but `o is var x` is always `true`. The compiler knows about that and in the Release mode (*), it removes the if-clause altogether and just leaves the `Console` method call. Unfortunately, the compiler does not warn you that the code is unreachable in the following case: `if (!(o is var x)) Console.WriteLine("Unreachable")`. Hopefully, this will be fixed as well.
+
+(*) It is not clear why the behavior is different in the Release mode only. But I think all the issues falls into the same bucker: the initial implementation of the feature is suboptimal. But based on [this comment](https://github.com/dotnet/roslyn/issues/22654#issuecomment-336329881) by Neal Gafter, this is going to change: "The pattern-matching lowering code is being rewritten from scratch (to support recursive patterns, too). I expect most of the improvements you seek here will come for "free" in the new code. But it will be some time before that rewrite is ready for prime time.".
 
 The lack of `null` check makes this case very special and potentially dangerous. But if you know what exactly is going on you may find this pattern useful. It can be used for introducing a temporary variable inside the expression:
 
@@ -121,7 +121,7 @@ public void VarPattern(IEnumerable<string> s)
 
 ## `Is`-expression meets "Elvis" operator
 
-There is another use case that I've found very useful. The type pattern matches the value only when the value is not null. We can use this "filtering" logic with the null-propagating operator to make a code easier to read:
+There is another use case that I've found very useful. The type pattern matches the value only when the value is not `null`. We can use this "filtering" logic with the null-propagating operator to make a code easier to read:
 
 ```csharp
 public void WithNullPropagation(IEnumerable<string> s)
@@ -153,7 +153,7 @@ Note, that the same pattern can be used for both - value types and reference typ
 C# 7 extends the switch statement to use patterns in the case clauses:
 
 ```csharp
-public static int Count<T>(IEnumerable<T> e)
+public static int Count<T>(this IEnumerable<T> e)
 {
     switch (e)
     {
@@ -163,7 +163,7 @@ public static int Count<T>(IEnumerable<T> e)
         case IProducerConsumerCollection<T> pc: return pc.Count;
         // Matches if e is not null
         case IEnumerable<T> _: return e.Count();
-        // Default case is handled when the e is null
+        // Default case is handled when e is null
         default: return 0;
     }
 }
@@ -174,7 +174,7 @@ The example shows the first set of changes to the switch statement.
 1. A variable of any type may be used in a switch statement.
 2. A case clause can specify a pattern.
 3. The order of the case clauses matters. The compiler emits an error if the previous clause matches a base type and the next clause matches a derived type.
-4. Non default clauses have an implicit null check (**). In the example before the very last case clause is valid because it matches only when the argument is not null.
+4. Non default clauses have an implicit null check (**). In the example before the very last case clause is valid because it matches only when the argument is not `null`.
 
 (**) The very last case clause shows another feature added to C# 7 called "discard" pattern. The name `_` is special and tells the compiler that the variable is not needed. The type pattern in a case clause requires an alias and if you don't need it you can ignore it using `_`.
 
@@ -255,7 +255,7 @@ But there are two things to keep in mind:
 switch(o)
 {
     // The generated code is less optimal:
-    // If o is int more than one type check and unboxing operation
+    // If o is int, then more than one type check and unboxing operation
     // may happen.
     case int n when n == 1: return 1;
     case string s when s == "": return 2;
@@ -282,7 +282,7 @@ switch (o)
 }
 ```
 
-But compiler can't check that one predicate is stronger than another and effectively supersedes the next cases:
+But compiler doesn't know that one predicate is stronger than the other and effectively supersedes the next cases:
 
 ```csharp
 switch (o)

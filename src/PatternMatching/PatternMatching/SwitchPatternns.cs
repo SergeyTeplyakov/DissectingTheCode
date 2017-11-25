@@ -9,6 +9,15 @@ namespace PatternMatching
 {
     public class SwitchPatternns
     {
+public int OtherPatterns(object o)
+{
+switch (o)
+{
+    case int n when n > 0: return 1;
+    // Will never match, but the compiler won't warn you about it
+    case int n when n > 1: return 2;
+}
+}
 public void SwitchBasedPatternMatching(object o)
 {
     if (o != null)

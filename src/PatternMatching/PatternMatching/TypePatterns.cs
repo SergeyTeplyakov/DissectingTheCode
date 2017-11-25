@@ -9,7 +9,9 @@ namespace PatternMatching
     {
 public void TypePatterns(object o)
 {
-    if (o is int n) Console.WriteLine(n);
+    if (!(o is int n)) Console.WriteLine(n);
+
+            //Console.WriteLine(n);
 
     if (o is string s && s.Trim() != string.Empty)
         Console.WriteLine("o is not blank");
