@@ -1,22 +1,22 @@
-# Everything you need to know about async methods internals
+# Everything you need to know about async method internals
 
-The C# language is very good in terms of developers productivity and I'm glad for a strong push towards making it suitable for high-performance applications as well. 
+The C# language is great for developer's productivity and I'm glad for the recent push towards making it more suitable for high-performance applications. 
 
-Here is an example: C# 5 introduced 'async' methods. The feature is very useful from user's point of view because it helps combining several task-based operations into one. But the abstraction has its own cost. Tasks are reference types causing allocations every time, even when an 'async' method is completed synchronously. C# 7 allows async methods to return task-like types like `ValueTask` to reduce the number of heap allocations or to avoid them altogether in some scenarios.
+Here is an example: C# 5 introduced 'async' methods. The feature is very useful from a user's point of view because it helps combine several task-based operations into one. But this abstraction comes at a cost. Tasks are reference types causing heap allocations everywhere they're created, even in cases where the 'async' method completes synchronously. With C# 7, async methods can return task-like types such as `ValueTask` to reduce the number of heap allocations or avoid them altogether in some scenarios.
 
-But to understand how all of that is possible we need to look under the hood and see how async methods are implemented.
+In order to understand how all of this is possible, we need to look under the hood and see how async methods are implemented.
 
 But first, a little bit of history.
 
-Classes `Task` and `Task<T>` were introduced in .NET 4.0 and, from my perspective, made a huge mind shift in area of asynchronous and parallel programming in .NET. Unlike older asynchronous patterns like `BeginXXX`/`EndXXX` pattern from .NET 1.0 (also known as ["Asynchronous Programming Model"](https://docs.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/asynchronous-programming-model-apm)) or [Event-based Asynchronous Pattern](https://docs.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/event-based-asynchronous-pattern-overview) like [`BackgroundWorker`](https://docs.microsoft.com/en-us/dotnet/framework/winforms/controls/backgroundworker-component) class from .NET 2.0, tasks are composable.
+Classes `Task` and `Task<T>` were introduced in .NET 4.0 and, from my perspective, made a huge mental shift in area of asynchronous and parallel programming in .NET. Unlike older asynchronous patterns such as the `BeginXXX`/`EndXXX` pattern from .NET 1.0 (also known as ["Asynchronous Programming Model"](https://docs.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/asynchronous-programming-model-apm)) or [Event-based Asynchronous Pattern](https://docs.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/event-based-asynchronous-pattern-overview) like [`BackgroundWorker`](https://docs.microsoft.com/en-us/dotnet/framework/winforms/controls/backgroundworker-component) class from .NET 2.0, tasks are composable.
 
-A task represents a unit of work with a promise to give you results back in the future. That promise could be backed by IO-operation or represent a computation intensive operation. It doesn't matter. What does matter is that result of the operation is self-sufficient and is a first-class citizen. You can pass a "future" around: you can store it in a variable, return from a method or pass it to another method. You can "join" two "futures" together to form another one, you can wait for results synchronously or you can "await" the result by adding "continuation" to the "future". You can decide what to do if the operation succeeded, failed or canceled, just using a task instance alone.
+A task represents a unit of work with a promise to give you results back in the future. That promise could be backed by IO-operation or represent a computation-intensive operation. It doesn't matter. What does matter is that the result of the operation is self-sufficient and is a first-class citizen. You can pass a "future" around: you can store it in a variable, return it from a method, or pass it to another method. You can "join" two "futures" together to form another one, you can wait for results synchronously or you can "await" the result by adding "continuation" to the "future". You can decide what to do if the operation succeeded, failed or was canceled, just using a task instance alone.
 
-Task Parallel Library (TPL) had changed the way we think about concurrency and C# 5 language made another step forward by introducing `async`/`await`. Async/await helps to compose tasks and gives the user an ability to use well-known constructs like `try/catch`, `using` etc. But like any other abstraction `async/await` feature has its cost. And to understand what the cost is you have to look under the hood.
+Task Parallel Library (TPL) had changed the way we think about concurrency and C# 5 language made a step forward by introducing `async`/`await`. Async/await helps to compose tasks and gives the user an ability to use well-known constructs like `try/catch`, `using` etc. But like any other abstraction `async/await` feature has its cost. And to understand what the cost is, you have to look under the hood.
 
 ## Async method internals
 
-Async methods (*) are very different from regular methods. A regular method has just one exit point and does not support "reentrancy". But async methods and iterators (methods with `yield return`) are different. A method caller can get the result (i.e. `Task` or `Task<T>`) almost immediately and then "await" the actual result of the method via the resulting task.
+Async methods (*) are very different from regular methods. A regular method has just one exit point and can't exit it's body multiple times. But async methods and iterators (methods with `yield return`) are different. A method caller can get the result (i.e. `Task` or `Task<T>`) almost immediately and then "await" the actual result of the method via the resulting task.
 
 (*) I'm using the term "async method" in one specific way: a method marked with contextual keyword `async`. It doesn't mean that the entire method is asynchronous. It doesn't mean that the method is asynchronous at all. It only means that the compiler performs some special transformation to the method.
 
@@ -293,7 +293,7 @@ The async state machine represents just one piece of the puzzle. To understand t
 
 ### How different pieces are glued together?
 
-(https://github.com/SergeyTeplyakov/DissectingTheCode/blob/master/posts/Images/Async_sequence_state_machine.png "Async workflow")
+IMAGE
 
 The chart looks overly complicated but each piece is well-design and plays an important role. The most interesting collaboration is happening when an awaited task is not finished (marked with the brown rectangle in the diagram):
 
