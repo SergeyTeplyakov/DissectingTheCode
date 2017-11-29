@@ -13,8 +13,38 @@ using ValueTasks.Internals;
 
 namespace ValueTasks
 {
+    class CustomSynchronizationContext : SynchronizationContext
+    {
+        
+    }
+
     class Program
     {
+        private static void PrintContext(string tag)
+        {
+            Console.WriteLine($"[{tag}] Sync context is '{(SynchronizationContext.Current is CustomSynchronizationContext ? "Custom" : "None")}'.");
+        }
+
+        private static async Task WithSyncContext()
+        {
+            PrintContext("Start");
+
+            await Task.Run(() => Thread.Sleep(42)).ConfigureAwait(true);
+
+            PrintContext("AfterYield");
+
+            await Task.Run(async () =>
+            {
+                PrintContext("InsideRun");
+
+                await Task.Yield();
+                PrintContext("InsideRunAfterAwait");
+                return 422;
+            });
+
+            PrintContext("AfterAwait");
+        }
+
         static async Task ExecutionContextInAsyncMethod()
         {
             var li = new AsyncLocal<int>();
@@ -78,8 +108,12 @@ namespace ValueTasks
             //Console.WriteLine("Main: before tsk.GetAwaiter().GetResult()");
             //tsk.GetAwaiter().GetResult();
             //BenchmarkRunner.Run<Benchmarks>();
-            ThreadPool.SetMinThreads(42, 42);
-            ExecutionContextInAsyncMethod().GetAwaiter().GetResult();
+
+            SynchronizationContext.SetSynchronizationContext(new CustomSynchronizationContext());
+            WithSyncContext().GetAwaiter().GetResult();
+
+            //ThreadPool.SetMinThreads(42, 42);
+            //ExecutionContextInAsyncMethod().GetAwaiter().GetResult();
 
             //var sp = new StockPrices();
             //var p = sp.GetStockPriceForAsync("MSFT").GetAwaiter().GetResult();
