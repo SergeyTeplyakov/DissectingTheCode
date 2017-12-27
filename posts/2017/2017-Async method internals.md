@@ -390,7 +390,7 @@ After second await: 42
 ## References
 If you want to learn more about execution context, I highly recommend the following two blog pots:
 
-* [ExecutionContext vs SynchronizationContext] by Stephen Toub(https://blogs.msdn.microsoft.com/pfxteam/2012/06/15/executioncontext-vs-synchronizationcontext/) and
+* [ExecutionContext vs SynchronizationContext](https://blogs.msdn.microsoft.com/pfxteam/2012/06/15/executioncontext-vs-synchronizationcontext/) by Stephen Toub and
 * [Implicit Async Context ("AsyncLocal")](https://blog.stephencleary.com/2013/04/implicit-async-context-asynclocal.html) by Stephen Cleary
 
 **Next**: we'll explore an extensibility model of asynchronous methods in C#.

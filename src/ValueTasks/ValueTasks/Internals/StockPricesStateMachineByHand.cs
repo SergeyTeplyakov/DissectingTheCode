@@ -13,8 +13,8 @@ class GetStockPriceForAsync_StateMachine
     enum State { Start, Step1, }
     private readonly StockPrices @this;
     private readonly string _companyId;
-    private Task _initializeMapIfNeededTask;
     private readonly TaskCompletionSource<decimal> _tcs;
+    private Task _initializeMapIfNeededTask;
     private State _state = State.Start;
 
     public GetStockPriceForAsync_StateMachine(StockPrices @this, string companyId)
@@ -29,15 +29,16 @@ class GetStockPriceForAsync_StateMachine
         {
             if (_state == State.Start)
             {
-                // The Code from the start of the method to the first 'await'.
+// Step 1 of the generated state machine:
 
-                if (string.IsNullOrEmpty(_companyId)) throw new ArgumentNullException();
-                _initializeMapIfNeededTask = @this.InitializeMapIfNeeded();
+if (string.IsNullOrEmpty(_companyId)) throw new ArgumentNullException();
+_initializeMapIfNeededTask = @this.InitializeMapIfNeeded();
 
-                // Schedule continuation
-                _state = State.Step1;
-                _initializeMapIfNeededTask.ContinueWith(_ => Start());
-            }
+
+                        // Schedule continuation
+_state = State.Step1;
+_initializeMapIfNeededTask.ContinueWith(_ => Start());
+                    }
             else if (_state == State.Step1)
             {
                 // Need to check the error and the cancel case first
@@ -47,11 +48,11 @@ class GetStockPriceForAsync_StateMachine
                     _tcs.SetException(_initializeMapIfNeededTask.Exception.InnerException);
                 else
                 {
-                    // The code between first await and the rest of the method
+// The code between first await and the rest of the method
 
-                    @this._store.TryGetValue(_companyId, out var result);
-                    _tcs.SetResult(result);
-                }
+@this._store.TryGetValue(_companyId, out var result);
+_tcs.SetResult(result); // The caller gets the result back
+                        }
             }
         }
         catch (Exception e)
