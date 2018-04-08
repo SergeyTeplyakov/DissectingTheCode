@@ -1,5 +1,6 @@
 ﻿using BenchmarkDotNet.Running;
 using System;
+using System.Collections.Generic;
 
 namespace ReadOnlyStructs
 {
@@ -11,7 +12,7 @@ namespace ReadOnlyStructs
     {
         static void Main(string[] args)
         {
-            BenchmarkRunner.Run<Benchmarks>();
+            BenchmarkRunner.Run<Benchmark2.Benchmarks>();
         }
     }
 }

@@ -9,7 +9,7 @@ Frequency=2531250 Hz, Resolution=395.0617 ns, Timer=TSC
 
 
 ```
-|                       Method |     Mean |    Error |   StdDev |
-|----------------------------- |---------:|---------:|---------:|
-| AggregateForNonReadOnlyField | 91.19 us | 1.811 us | 2.597 us |
-|    AggregateForReadOnlyField | 89.25 us | 1.775 us | 3.705 us |
+|                 Method |      Mean |     Error |    StdDev |
+|----------------------- |----------:|----------:|----------:|
+| AggregatePassedByValue |  71.24 us | 0.3150 us | 0.2278 us |
+|    AggregatePassedByIn | 124.02 us | 3.2885 us | 9.6963 us |
