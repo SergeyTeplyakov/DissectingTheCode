@@ -8,7 +8,35 @@ using System.Threading.Tasks;
 
 namespace LockingCost.NodeWithLock
 {
-    public class Node
+public class Node
+{
+    public const int InvalidId = -1;
+    private static int s_idCounter;
+
+    private int m_id;
+
+    public int Id
+    {
+        get
+        {
+            if (m_id == InvalidId)
+            {
+                lock (this)
+                {
+                    if (m_id == InvalidId)
+                    {
+                        m_id = Interlocked.Increment(ref s_idCounter);
+                    }
+                }
+            }
+
+            return m_id;
+        }
+    }
+}
+
+
+    public class Node2
     {
         public const int InvalidId = -1;
         private static int s_idCounter;

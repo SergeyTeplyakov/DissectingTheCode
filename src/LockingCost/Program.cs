@@ -62,29 +62,32 @@ namespace LockingCost
             //m_nodeWithLocksAndGetHashCode = Enumerable.Range(1, Count).Select(n => new NodeWithLockAndHashCode.Node()).ToList();
         }
 
-        List<NodeWithLock.Node> m_nodeWithLocks => Enumerable.Range(1, Count).Select(n => new NodeWithLock.Node()).ToList();
+List<NodeWithLock.Node> m_nodeWithLocks => 
+            Enumerable.Range(1, Count).Select(n => new NodeWithLock.Node()).ToList();
+List<NodeNoLock.NoLockNode> m_nodeWithNoLocks => 
+            Enumerable.Range(1, Count).Select(n => new NodeNoLock.NoLockNode()).ToList();
 
         [Benchmark]
-        public long NodeWithLock()
-        {
-            // m_nodeWithLocks has 5 million instances
-            return m_nodeWithLocks
-                .AsParallel()
-                .WithDegreeOfParallelism(16)
-                .Select(n => (long)n.Id).Sum();
-        }
+public long NodeWithLock()
+{
+    // m_nodeWithLocks has 5 million instances
+    return m_nodeWithLocks
+        .AsParallel()
+        .WithDegreeOfParallelism(16)
+        .Select(n => (long)n.Id).Sum();
+}
 
-        [Benchmark]
-        public long NodeWithNoLock()
-        {
-            // m_nodeWithNoLocks has 5 million instances
-            return m_nodeWithNoLocks
-                .AsParallel()
-                .WithDegreeOfParallelism(16)
-                .Select(n => (long)n.Id).Sum();
-        }
+[Benchmark]
+public long NodeWithNoLock()
+{
+    // m_nodeWithNoLocks has 5 million instances
+    return m_nodeWithNoLocks
+        .AsParallel()
+        .WithDegreeOfParallelism(16)
+        .Select(n => (long)n.Id).Sum();
+}
 
-        List<NodeNoLock.NoLockNode> m_nodeWithNoLocks => Enumerable.Range(1, Count).Select(n => new NodeNoLock.NoLockNode()).ToList();
+        
         List<NodeWithLockAndHashCode.Node> m_nodeWithLocksAndGetHashCode => Enumerable.Range(1, Count).Select(n => new NodeWithLockAndHashCode.Node()).ToList();
 
         [Benchmark]
@@ -116,6 +119,21 @@ namespace LockingCost
         {
             const int count = 10_000_000;
 
+object o = new object();
+lock (o)
+{
+    Task.Run(() =>
+    {
+        // This will promote a thin lock as well
+        lock (o) { }
+    });
+
+    // 10 ms is not enough, the CLR spins longer than 10 ms.
+    Thread.Sleep(100);
+    Debugger.Break();
+}
+
+
             //NodeWithLock.Node.Measure(100, isWarmUp: true);
             //NodeWithLock.Node.Measure(count, isWarmUp: false);
 
@@ -128,7 +146,7 @@ namespace LockingCost
             //NodeLockOnSyncRootWithHashCode.Node.Measure(100, isWarmUp: true);
             //NodeLockOnSyncRootWithHashCode.Node.Measure(count, isWarmUp: false);
             //new CopyToBenchmark().ObjectWrapper_BufferCopy();
-            
+
             //BenchmarkDotNet.Running.BenchmarkRunner.Run<CopyToBenchmark>();
             BenchmarkDotNet.Running.BenchmarkRunner.Run<NodeLocksTest>();
 

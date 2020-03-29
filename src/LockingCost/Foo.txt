@@ -1,0 +1,5 @@
+﻿                      Method |        Mean |    StdDev |
+---------------------------- |------------ |---------- |
+                NodeWithLock | 152.2947 ms | 1.4895 ms |
+              NodeWithNoLock | 149.5015 ms | 2.7289 ms |
+  NodeWithLockAndGetHashCode | 541.6314 ms | 4.0445 ms |

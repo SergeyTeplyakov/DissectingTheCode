@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace LockingCost.NodeLockFree
 {
+
     public class Node
     {
         public const int InvalidId = -1;
