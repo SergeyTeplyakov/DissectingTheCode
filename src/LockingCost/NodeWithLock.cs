@@ -35,7 +35,6 @@ public class Node
     }
 }
 
-
     public class Node2
     {
         public const int InvalidId = -1;

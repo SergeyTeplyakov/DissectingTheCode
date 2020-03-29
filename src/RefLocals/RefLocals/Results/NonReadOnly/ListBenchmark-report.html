@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>ListBenchmark</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.10.13, OS=Windows 10 Redstone 3 [1709, Fall Creators Update] (10.0.16299.309)
+Intel Core i7-6700HQ CPU 2.60GHz (Skylake), 1 CPU, 8 logical cores and 4 physical cores
+Frequency=2531251 Hz, Resolution=395.0616 ns, Timer=TSC
+  [Host]     : .NET Framework 4.7 (CLR 4.0.30319.42000), 64bit RyuJIT-v4.7.2633.0
+  DefaultJob : .NET Framework 4.7 (CLR 4.0.30319.42000), 64bit RyuJIT-v4.7.2633.0
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>             Method</th><th>Categories</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Scaled</th><th>ScaledSD</th>
+</tr>
+</thead><tbody><tr><td>TestArray_48</td><td>BigStruct_48</td><td>262.5 us</td><td>4.707 us</td><td>4.403 us</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>TestListOfT_48</td><td>BigStruct_48</td><td>505.8 us</td><td>2.721 us</td><td>2.412 us</td><td>1.93</td><td>0.03</td>
+</tr><tr><td>TestNaiveImmutableList_48</td><td>BigStruct_48</td><td>472.8 us</td><td>8.813 us</td><td>8.244 us</td><td>1.80</td><td>0.04</td>
+</tr><tr><td>TestArray_32</td><td>BigStruct_32</td><td>176.5 us</td><td>2.980 us</td><td>2.787 us</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>TestListOfT_32</td><td>BigStruct_32</td><td>234.3 us</td><td>1.673 us</td><td>1.397 us</td><td>1.33</td><td>0.02</td>
+</tr><tr><td>TestNaiveImmutableList_32</td><td>BigStruct_32</td><td>219.4 us</td><td>2.934 us</td><td>2.601 us</td><td>1.24</td><td>0.02</td>
+</tr><tr><td>TestArray_16</td><td>BigStruct_16</td><td>143.9 us</td><td>2.036 us</td><td>1.700 us</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>TestListOfT16</td><td>BigStruct_16</td><td>237.1 us</td><td>4.629 us</td><td>6.785 us</td><td>1.65</td><td>0.05</td>
+</tr><tr><td>TestNaiveImmutableList16</td><td>BigStruct_16</td><td>214.3 us</td><td>4.192 us</td><td>5.301 us</td><td>1.49</td><td>0.04</td>
+</tr><tr><td>TestArray_4</td><td>BigStruct_4</td><td>129.3 us</td><td>1.678 us</td><td>1.570 us</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>TestListOfT_4</td><td>BigStruct_4</td><td>186.5 us</td><td>3.724 us</td><td>5.098 us</td><td>1.44</td><td>0.04</td>
+</tr><tr><td>TestNaiveImmutableList_4</td><td>BigStruct_4</td><td>132.6 us</td><td>2.081 us</td><td>1.845 us</td><td>1.03</td><td>0.02</td>
+</tr></tbody></table>
+</body>
+</html>

@@ -50,6 +50,46 @@ namespace LockingCost
     }
 
     [MemoryDiagnoser]
+    public class ArraySizeTests
+    {
+        [Benchmark]
+        public object EmptyArrayOfInts()
+        {
+            return new int[] { };
+        }
+
+        [Benchmark]
+        public object EmptyArrayOfObjects()
+        {
+            return new object[] { };
+        }
+
+        [Benchmark]
+        public object ArrayOfIntWith2()
+        {
+            return new int[] {1,2 };
+        }
+
+        [Benchmark]
+        public object ArrayOfObjectsWith2()
+        {
+            return new object[] { "1", "2" };
+        }
+
+        [Benchmark]
+        public object EmptyArrayOfStringBuilders()
+        {
+            return new StringBuilder[] { };
+        }
+
+        [Benchmark]
+        public object ArrayOfStringBuildersOfTwo()
+        {
+            return new StringBuilder[] {null, null};
+        }
+    }
+
+    [MemoryDiagnoser]
     public class NodeLocksTest
     {
         const int Count = 100_000;
@@ -63,11 +103,11 @@ namespace LockingCost
         }
 
 List<NodeWithLock.Node> m_nodeWithLocks => 
-            Enumerable.Range(1, Count).Select(n => new NodeWithLock.Node()).ToList();
+    Enumerable.Range(1, Count).Select(n => new NodeWithLock.Node()).ToList();
 List<NodeNoLock.NoLockNode> m_nodeWithNoLocks => 
-            Enumerable.Range(1, Count).Select(n => new NodeNoLock.NoLockNode()).ToList();
+    Enumerable.Range(1, Count).Select(n => new NodeNoLock.NoLockNode()).ToList();
 
-        [Benchmark]
+[Benchmark]
 public long NodeWithLock()
 {
     // m_nodeWithLocks has 5 million instances
@@ -118,6 +158,64 @@ public long NodeWithNoLock()
         static void Main(string[] args)
         {
             const int count = 10_000_000;
+            // Just need to call GetHashCode and discard the result
+            //o.GetHashCode();
+
+object o = new object();
+lock (o)
+{
+    Task.Run(() =>
+    {
+        // This will promote a thin lock as well
+        lock (o) { }
+    });
+
+    // 10 ms is not enough, the CLR spins longer than 10 ms.
+    Thread.Sleep(100);
+    Debugger.Break();
+}
+
+
+
+            string[] s = {""};
+Array a = s;
+// System.InvalidCastException: Object cannot be stored in an array of this type.
+a.SetValue("1", 0);
+            object[] o = s;
+            // System.ArrayTypeMismatchException: Attempted to access an element as a type incompatible with the array.
+            o[0] = new object();
+//object o = new object();
+//lock (o)
+//{
+//    //Task.Run(() =>
+//    //{
+//    //    // This will promote a thin lock as well
+//    //    lock (o) { }
+//    //});
+
+//    //// 10 ms is not enough, the CLR spins longer than 10 ms.
+//    //Thread.Sleep(100);
+//    Debugger.Break();
+//}
+
+
+            //lock (n)
+            //{
+            //    Task.Run(() =>
+            //    {
+            //        lock (n)
+            //        {
+            //            // This will promote the lock
+            //        }
+            //    });
+
+            //    Thread.Sleep(1000);
+
+                
+
+            //    Debugger.Break();
+
+            //}
 
 object o = new object();
 lock (o)
@@ -148,7 +246,8 @@ lock (o)
             //new CopyToBenchmark().ObjectWrapper_BufferCopy();
 
             //BenchmarkDotNet.Running.BenchmarkRunner.Run<CopyToBenchmark>();
-            BenchmarkDotNet.Running.BenchmarkRunner.Run<NodeLocksTest>();
+            //BenchmarkDotNet.Running.BenchmarkRunner.Run<NodeLocksTest>();
+            //BenchmarkDotNet.Running.BenchmarkRunner.Run<ArraySizeTests>();
 
             //CheckInParallel(10, false, true);
             //CheckInParallel(10, false, true);

@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tuples", "Tuples\Tuples.csproj", "{A6EC894B-C163-4914-921D-4F5AB603C9B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassLibrary2", "ClassLibrary2\ClassLibrary2.csproj", "{F7AE571B-0830-4B1F-81AA-0AEFBA8BA6A5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A6EC894B-C163-4914-921D-4F5AB603C9B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6EC894B-C163-4914-921D-4F5AB603C9B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6EC894B-C163-4914-921D-4F5AB603C9B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6EC894B-C163-4914-921D-4F5AB603C9B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7AE571B-0830-4B1F-81AA-0AEFBA8BA6A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7AE571B-0830-4B1F-81AA-0AEFBA8BA6A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7AE571B-0830-4B1F-81AA-0AEFBA8BA6A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7AE571B-0830-4B1F-81AA-0AEFBA8BA6A5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F285F783-3141-4E6D-A50C-A262398801E6}
+	EndGlobalSection
+EndGlobal
