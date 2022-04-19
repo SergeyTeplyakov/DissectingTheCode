@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheDangerOfTaskCompletionSource", "TheDangerOfTaskCompletionSource.csproj", "{104BB90C-7C51-40C4-A71A-5501F58184DA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{104BB90C-7C51-40C4-A71A-5501F58184DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{104BB90C-7C51-40C4-A71A-5501F58184DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{104BB90C-7C51-40C4-A71A-5501F58184DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{104BB90C-7C51-40C4-A71A-5501F58184DA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F3ED0C08-B462-42DC-A293-1CEB87AEADF3}
+	EndGlobalSection
+EndGlobal
