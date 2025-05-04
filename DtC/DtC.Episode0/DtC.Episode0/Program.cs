@@ -16,14 +16,19 @@ namespace DtC.Episode0
     }
 
     /// <summary>
-    /// The struct is non-blittable, because there is a gap after S1 and the end of the struct.
-    /// Here is the layout
+    /// The struct is non-blittable, because the first "field" is a reference type.
     /// </summary>
-    public struct NonBlittable(long L, int N, short S1)
+    public struct NonBlittable(string Str, int N)
     {
-        public long L = L;
+        public string Str = Str;
         public int N = N;
-        public long S1 = S1;
+
+        public static IEnumerable<NonBlittable> Generate(int count)
+        {
+            // The hash code of all the instances is going to be the same!
+            return Enumerable.Range(1, count)
+                .Select(n => new NonBlittable(Str: string.Empty, N: n));
+        }
     }
 
     /// <summary>
@@ -31,14 +36,12 @@ namespace DtC.Episode0
     /// </summary>
     public record struct NonBlittableRecord(long L, int N, short S1);
 
-    //[SimpleJob]
-    //[ShortRunJob]
     [MemoryDiagnoser]
     [Orderer(SummaryOrderPolicy.Method)]
     public class CacheLookupBenchmark
     {
         private Blittable _blittable = new Blittable(L: 42, N: -1, S1: 1, S2: 2);
-        private NonBlittable _nonBlittable = new NonBlittable(L: 42, N: -1, S1: 1);
+        private NonBlittable _nonBlittable = new NonBlittable(Str: "42", N: -1);
         private NonBlittableRecord _nonBlittableRecord = new NonBlittableRecord(L: 42, N: -1, S1: 1);
         
         private ConcurrentDictionary<Blittable, int> _blittables;
@@ -59,7 +62,7 @@ namespace DtC.Episode0
             _nonBlittables = new (
                 Enumerable
                 .Range(0, Count)
-                .Select(n => KeyValuePair.Create(new NonBlittable(L: 42, n, 1), 42)));
+                .Select(n => KeyValuePair.Create(new NonBlittable(Str: "42", n), 42)));
             
             _nonBlittablerecords = new (
                 Enumerable
