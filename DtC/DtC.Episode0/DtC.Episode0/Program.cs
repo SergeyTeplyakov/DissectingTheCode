@@ -34,7 +34,7 @@ namespace DtC.Episode0
     /// <summary>
     /// The struct is non-blittable, but records properly override Equals and GetHashCode
     /// </summary>
-    public record struct NonBlittableRecord(long L, int N, short S1);
+    public record struct NonBlittableRecord(string Str, int N);
 
     [MemoryDiagnoser]
     [Orderer(SummaryOrderPolicy.Method)]
@@ -42,7 +42,7 @@ namespace DtC.Episode0
     {
         private Blittable _blittable = new Blittable(L: 42, N: -1, S1: 1, S2: 2);
         private NonBlittable _nonBlittable = new NonBlittable(Str: "42", N: -1);
-        private NonBlittableRecord _nonBlittableRecord = new NonBlittableRecord(L: 42, N: -1, S1: 1);
+        private NonBlittableRecord _nonBlittableRecord = new NonBlittableRecord(Str: "42", N: -1);
         
         private ConcurrentDictionary<Blittable, int> _blittables;
         private ConcurrentDictionary<NonBlittable, int> _nonBlittables;
