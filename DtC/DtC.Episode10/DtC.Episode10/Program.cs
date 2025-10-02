@@ -1,103 +1,108 @@
-﻿namespace DtC.Episode10;
+﻿using System.Text;
+
+namespace DtC.Episode10;
 
 
 
 public static class Program
 {
+    
 
-    private static async Task GetResultAsync()
+    
+
+    public static async Task<string> DoWorkAsync()
     {
-        WriteLine("Inside GetResultAsync, about to await...");
-        // When we await, the method returns an incomplete Task.
-        // The continuation is scheduled to run on the SynchronizationContext.
-        await Task.Delay(500);
-        WriteLine("This line will never be reached.");
+        await Task.Delay(1000).ConfigureAwait(false);
+        return "Done";
     }
 
-    public static async Task AsyncOperation()
+    private static void ProcessData()
     {
-        Console.WriteLine("AsyncOperation started.");
-        await Task.Delay(100);
-        
-        GetResultAsync().GetAwaiter().GetResult();
-        Console.WriteLine("AsyncOperation ended.");
+        Console.WriteLine("Running ProcessData");
+        var result = DoWorkAsync().Result;
+        Console.WriteLine(result);
     }
 
-    public static async Task Main(string[] args)
+    public static void ProcessDataInParallel()
     {
-        // Set the custom synchronization context
-        using var syncContext = new SingleThreadSynchronizationContext("MainThread");
-        SynchronizationContext.SetSynchronizationContext(syncContext);
+        var ids = Enumerable.Range(1, 100_000).ToList();
+        var syncObject = new object();
+        var sb = new StringBuilder();
+        Parallel.ForEach(ids,
+            id =>
+            {
+                Append(id);
+            });
 
-        // Using Task.Yield to jump into the custom synchronization context.
-        await Task.Yield();
-        //await CauseDeadlock();
-        //Console.WriteLine("Deadlock avoided, continuing...");
-        await AsyncOperation();
-        return;
-
-        WriteLine("About to run TopLevelOperation.");
-        await ProcessDataAndUpdateUI();
-
-        // We need to jump from the synchronization context in order to dispose it properly.
-        // Because this line is executed by the thread, so the thread.
-        // Resetting the sync context and then yielding to the thread pool.
-        SynchronizationContext.SetSynchronizationContext(null);
-        await Task.Yield();
-    }
-
-    // Application code:
-    // Each step should be executed in sync context!
-    static async Task ProcessDataAndUpdateUI()
-    {
-        WriteLine("Starting top-level operation..."); // dedicated thread
-        
-        // This is the application code, so don't use ConfigureAwait here
-        await ProcessDataAsync(42);
-
-        WriteLine("Top-level operation completed."); // dedicated thread
-    }
-
-    // Library code:
-    // Every step (except the first one) should NOT be executed
-    // in sync context!
-    static async Task<string> ProcessDataAsync(int id)
-    {
-        WriteLine("Starting data processing...");
-        var data = await FetchDataAsync(id).ConfigureAwait(false);
-        // this is an expensive operation that can take a lot of resources!
-        WriteLine($"Data processed: {data}");
-
-        await SaveDataAsync(id, data).ConfigureAwait(false);
-        WriteLine("Data saved successfully.");
-        return data;
-    }
-
-    static async Task<string> FetchDataAsync(int id)
-    {
-        await Task.Delay(500); // Simulate async work
-        return $"Data for ID {id}";
-    }
-
-    static async Task SaveDataAsync(int id, string data)
-    {
-        await Task.Delay(500); // Simulate async work
-    }
-
-    static void WriteLine(string message)
-    {
-        Console.WriteLine($"[{DateTime.Now}] [{Environment.CurrentManagedThreadId}] {message}");
-    }
-}
-
-public static class TaskExtensions
-{
-    extension(Task)
-    {
-        public static System.Runtime.CompilerServices.ConfiguredTaskAwaitable ForceYielding()
+        void Append(int id)
         {
-            return Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
+            lock (syncObject)
+            {
+                // Suppose the operation is taking 100ms
+                Thread.Sleep(100);
+                sb.Append(id);
+            }
         }
     }
 
+    public static async Task ProcessDataAsync()
+    {
+        await FetchDataAsync();
+
+        static async Task FetchDataAsync()
+        {
+            await TryGetDataFromCacheAsync();
+        }
+
+        static Task TryGetDataFromCacheAsync()
+        {
+            var tcs = new TaskCompletionSource();
+            return tcs.Task;
+        }
+    }
+
+    public static void Main(string[] args)
+    {
+        ProcessDataAsync().GetAwaiter().GetResult();
+    }
+    
+    
+
+
+
+
+
+
+
+
+
+
+    //public static async Task Main(string[] args)
+    //{
+    //    await ProcessDataAsync();
+    //    Console.WriteLine("Done!");
+    //    ProcessDataInParallel();
+    //    Console.WriteLine("Done Processing Data");
+    //    // Set the custom synchronization context
+    //    using var syncContext = new SingleThreadSynchronizationContext("MainThread");
+    //    SynchronizationContext.SetSynchronizationContext(syncContext);
+        
+    //    // Using Task.Yield to jump into the custom synchronization context.
+    //    await Task.Yield();
+
+    //    ProcessData();
+    //    Console.WriteLine("Almost done!");
+    //}
 }
+
+//public static class TaskExtensions
+//{
+//    extension(Task)
+//    {
+//        public static System.Runtime.CompilerServices.ConfiguredTaskAwaitable ForceYielding()
+//        {
+//            return Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
+//        }
+//    }
+
+//}

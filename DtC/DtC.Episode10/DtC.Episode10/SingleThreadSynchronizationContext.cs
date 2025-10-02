@@ -135,12 +135,8 @@ public class SingleThreadSynchronizationContext : SynchronizationContext, IDispo
         Console.WriteLine("Cancelling cancellation token and completing work queue.");
         _cancellationTokenSource.Cancel();
         _workQueue.CompleteAdding();
-        
-        
-        if (!_thread.Join(TimeSpan.FromSeconds(5)))
-        {
-            Console.WriteLine("Warning: Thread did not shut down gracefully within 5 seconds");
-        }
+
+        _thread.Join();
         
         _workQueue.Dispose();
         _cancellationTokenSource.Dispose();
